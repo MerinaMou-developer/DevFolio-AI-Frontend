@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-plus-jakarta), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Brand palette */
+  --color-navy-950: #071422;
+  --color-navy-900: #0c1f33;
+  --color-navy-800: #132a42;
+  --color-navy-700: #1a3654;
+  --color-brand: #3b7597;
+  --color-brand-light: #4d8fb3;
+  --color-brand-dark: #2d5f7a;
+  --color-cyan-50: #f0f9fb;
+  --color-cyan-100: #dceef3;
+  --color-cyan-200: #b8dde8;
+  --color-mint: #2ec4b6;
+  --color-mint-bright: #3ddecf;
+  --color-mint-dark: #22a89c;
+
+  /* Semantic */
+  --color-background: var(--color-navy-950);
+  --color-foreground: #f0f7fa;
+  --color-muted: #8ba3b5;
+  --color-border: rgba(59, 117, 151, 0.25);
+  --color-card: #0f2438;
+  --color-card-hover: #152d45;
+  --color-accent: var(--color-mint);
+  --color-accent-soft: var(--color-mint-bright);
+  --color-accent-glow: rgba(46, 196, 182, 0.35);
+  --color-success: #2ec4b6;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+
+  /* Marketing (light surfaces) */
+  --color-surface: #ffffff;
+  --color-surface-muted: var(--color-cyan-50);
+  --color-text-primary: var(--color-navy-900);
+  --color-text-secondary: #4a6578;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-brand);
+  color: white;
+}
+
+/* ——— Marketing / light pages ——— */
+.page-light {
+  --color-background: var(--color-surface);
+  color: var(--color-text-primary);
+  background: linear-gradient(180deg, #ffffff 0%, var(--color-cyan-50) 45%, #ffffff 100%);
+}
+
+.page-light ::selection {
+  background: var(--color-mint);
+  color: var(--color-navy-950);
+}
+
+.gradient-hero {
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(59, 117, 151, 0.12), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 20%, rgba(46, 196, 182, 0.08), transparent),
+    radial-gradient(ellipse 40% 30% at 0% 80%, rgba(184, 221, 232, 0.4), transparent),
+    linear-gradient(180deg, #ffffff 0%, var(--color-cyan-50) 100%);
+}
+
+.gradient-mesh {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -15%, rgba(59, 117, 151, 0.2), transparent),
+    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(46, 196, 182, 0.1), transparent),
+    var(--color-navy-950);
+}
+
+.glass {
+  background: rgba(12, 31, 51, 0.75);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(16px);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(59, 117, 151, 0.12);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 4px 24px rgba(7, 20, 34, 0.06);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-navy-900) 0%, var(--color-brand) 55%, var(--color-mint-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-light {
+  background: linear-gradient(135deg, var(--color-navy-900) 20%, var(--color-brand) 70%, var(--color-mint-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(59, 117, 151, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 117, 151, 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 4px 24px rgba(46, 196, 182, 0.25);
+  }
+  50% {
+    box-shadow: 0 8px 40px rgba(46, 196, 182, 0.45);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
