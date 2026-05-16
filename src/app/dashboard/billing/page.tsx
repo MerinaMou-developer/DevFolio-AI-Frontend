@@ -8,7 +8,12 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAuth } from "@/context/AuthContext";
-import { createCheckoutSession, getBillingConfig, getBillingStatus } from "@/lib/api/billing";
+import {
+  confirmCheckoutSession,
+  createCheckoutSession,
+  getBillingConfig,
+  getBillingStatus,
+} from "@/lib/api/billing";
 import { ApiClientError } from "@/lib/api/client";
 import type { BillingConfig, BillingStatus } from "@/types/billing.types";
 
@@ -45,13 +50,59 @@ function BillingContent() {
   }, [load]);
 
   useEffect(() => {
-    if (searchParams.get("success") === "1") {
-      setNotice("Payment received. Your Pro plan will activate in a few seconds.");
-      void refreshUser().then(() => load());
-    } else if (searchParams.get("canceled") === "1") {
+    const success = searchParams.get("success") === "1";
+    const sessionId = searchParams.get("session_id");
+    if (!success && searchParams.get("canceled") !== "1") return;
+
+    if (searchParams.get("canceled") === "1") {
       setNotice("Checkout canceled. You can upgrade anytime.");
+      return;
     }
-  }, [searchParams, refreshUser, load]);
+
+    let cancelled = false;
+
+    async function afterPayment() {
+      setNotice("Confirming your Pro subscription…");
+      const token = await getToken();
+      if (!token || cancelled) return;
+
+      if (sessionId) {
+        try {
+          await confirmCheckoutSession(token, sessionId);
+          await refreshUser();
+          await load();
+          if (!cancelled) {
+            setNotice("You are now on Pro. Enjoy the higher AI quota!");
+          }
+          return;
+        } catch (err) {
+          if (!cancelled) {
+            setNotice(
+              err instanceof ApiClientError
+                ? `${err.message} If this persists, check Stripe webhooks on Render.`
+                : "Could not confirm payment. Try refreshing the page.",
+            );
+          }
+        }
+      }
+
+      for (let attempt = 0; attempt < 5 && !cancelled; attempt += 1) {
+        await refreshUser();
+        await load();
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      if (!cancelled) {
+        setNotice(
+          "Payment received. If you are still on Free, Stripe webhooks may not be configured on the API (see Render env).",
+        );
+      }
+    }
+
+    void afterPayment();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, refreshUser, load, getToken]);
 
   async function handleUpgrade() {
     const token = await getToken();

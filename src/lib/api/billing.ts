@@ -15,3 +15,11 @@ export function createCheckoutSession(token: string) {
     token,
   });
 }
+
+export function confirmCheckoutSession(token: string, sessionId: string) {
+  return apiRequest<BillingStatus>("/billing/confirm-checkout", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+}
