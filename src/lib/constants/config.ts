@@ -29,6 +29,15 @@ export const STATUS_LABELS: Record<(typeof APPLICATION_STATUSES)[number], string
   withdrawn: "Withdrawn",
 };
 
+export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
+
+export function getStatusLabel(status: string): string {
+  if (status in STATUS_LABELS) {
+    return STATUS_LABELS[status as ApplicationStatus];
+  }
+  return status;
+}
+
 export const STATUS_COLORS: Record<(typeof APPLICATION_STATUSES)[number], string> = {
   applied: "bg-[var(--color-brand)]/20 text-[var(--color-brand-light)] border-[var(--color-brand)]/30",
   screening: "bg-amber-500/20 text-amber-300 border-amber-500/30",

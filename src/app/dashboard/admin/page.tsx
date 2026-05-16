@@ -24,7 +24,7 @@ import {
   listAdminUsers,
   updateAdminUser,
 } from "@/lib/api/admin";
-import { STATUS_LABELS } from "@/lib/constants/config";
+import { getStatusLabel, STATUS_LABELS } from "@/lib/constants/config";
 import { formatDate, formatDateTime } from "@/lib/helpers/formatDate";
 import type {
   AdminAnalysis,
@@ -284,7 +284,7 @@ export default function AdminDashboardPage() {
             a.company_name,
             a.role_title,
             a.user_email,
-            STATUS_LABELS[a.status] ?? a.status,
+            getStatusLabel(a.status),
             a.applied_on ?? "—",
           ])}
         />
