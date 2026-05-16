@@ -1,12 +1,14 @@
 "use client";
 
 import Script from "next/script";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useMounted } from "@/hooks/useMounted";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
 import { GOOGLE_CLIENT_ID } from "@/lib/constants/config";
 import { ApiClientError } from "@/lib/api/client";
+import { resolvePostAuthPath } from "@/lib/helpers/authRedirect";
 
 declare global {
   interface Window {
@@ -24,9 +26,11 @@ declare global {
 
 interface GoogleSignInButtonProps {
   onError?: (message: string) => void;
+  redirectParam?: string | null;
 }
 
-export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ onError, redirectParam }: GoogleSignInButtonProps) {
+  const router = useRouter();
   const { googleLogin } = useAuth();
   const mounted = useMounted();
   const [ready, setReady] = useState(false);
@@ -40,7 +44,8 @@ export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
         if (!response.credential) return;
         setLoading(true);
         try {
-          await googleLogin(response.credential);
+          const me = await googleLogin(response.credential);
+          router.push(resolvePostAuthPath(me.role, redirectParam));
         } catch (err) {
           const msg =
             err instanceof ApiClientError ? err.message : "Google sign-in failed";
@@ -56,7 +61,7 @@ export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
       width: 320,
       text: "continue_with",
     });
-  }, [ready, googleLogin, onError]);
+  }, [ready, googleLogin, onError, redirectParam, router]);
 
   useEffect(() => {
     if (window.google?.accounts?.id) setReady(true);

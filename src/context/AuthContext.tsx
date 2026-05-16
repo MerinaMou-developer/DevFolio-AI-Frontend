@@ -21,7 +21,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string) => Promise<void>;
-  googleLogin: (idToken: string) => Promise<void>;
+  googleLogin: (idToken: string) => Promise<User>;
   logout: () => void;
   getToken: () => Promise<string | null>;
   refreshUser: () => Promise<void>;
@@ -90,6 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (idToken: string) => {
       const next = await googleSignIn(idToken);
       await applyTokens(next);
+      const me = await getMe(next.access_token);
+      setUser(me);
+      return me;
     },
     [applyTokens],
   );

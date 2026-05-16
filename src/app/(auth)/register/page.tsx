@@ -1,17 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import { GoogleSignInButton } from "@/components/features/auth/GoogleSignInButton";
+import { AuthLoadingSpinner } from "@/components/features/auth/AuthLoadingSpinner";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/context/AuthContext";
 import { ApiClientError } from "@/lib/api/client";
+import {
+  BILLING_REDIRECT,
+  loginHref,
+  resolvePostAuthPath,
+} from "@/lib/helpers/authRedirect";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
   const { register, login, isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,16 +28,12 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace(resolvePostAuthPath("developer", redirectParam));
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, redirectParam]);
 
   if (isLoading || isAuthenticated) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--color-brand)]/30 border-t-[var(--color-brand)]" />
-      </div>
-    );
+    return <AuthLoadingSpinner />;
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -38,8 +42,8 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(email, password);
-      await login(email, password);
-      router.push("/dashboard");
+      const me = await login(email, password);
+      router.push(resolvePostAuthPath(me.role, redirectParam));
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : "Registration failed");
     } finally {
@@ -47,14 +51,17 @@ export default function RegisterPage() {
     }
   }
 
+  const subheading =
+    redirectParam === BILLING_REDIRECT
+      ? "Create an account, then continue to Pro checkout."
+      : "Start building your developer portfolio";
+
   return (
     <div className="mx-auto flex max-w-md flex-col px-4 py-16">
       <Card className="border-[var(--color-cyan-100)] bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-[var(--color-navy-900)]">Create your account</CardTitle>
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            Start building your developer portfolio
-          </p>
+          <p className="text-sm text-[var(--color-text-secondary)]">{subheading}</p>
         </CardHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -80,18 +87,29 @@ export default function RegisterPage() {
           </Button>
         </form>
         <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-zinc-800" />
+          <div className="h-px flex-1 bg-zinc-200" />
           <span className="text-xs text-zinc-500">or</span>
-          <div className="h-px flex-1 bg-zinc-800" />
+          <div className="h-px flex-1 bg-zinc-200" />
         </div>
-        <GoogleSignInButton onError={setError} />
+        <GoogleSignInButton onError={setError} redirectParam={redirectParam} />
         <p className="mt-6 text-center text-sm text-zinc-500">
           Already have an account?{" "}
-          <Link href="/login" className="text-violet-400 hover:underline">
+          <Link
+            href={loginHref(redirectParam ?? undefined)}
+            className="text-violet-400 hover:underline"
+          >
             Sign in
           </Link>
         </p>
       </Card>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<AuthLoadingSpinner />}>
+      <RegisterForm />
+    </Suspense>
   );
 }

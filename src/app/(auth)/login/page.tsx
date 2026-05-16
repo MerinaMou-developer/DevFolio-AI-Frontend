@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
 import { GoogleSignInButton } from "@/components/features/auth/GoogleSignInButton";
 import { AuthLoadingSpinner } from "@/components/features/auth/AuthLoadingSpinner";
 import { Button } from "@/components/ui/Button";
@@ -11,15 +11,29 @@ import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/context/AuthContext";
 import { useGuestOnly } from "@/hooks/useGuestOnly";
 import { ApiClientError } from "@/lib/api/client";
+import { BILLING_REDIRECT, registerHref, resolvePostAuthPath } from "@/lib/helpers/authRedirect";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+  const redirectAfterAuth = resolvePostAuthPath("developer", redirectParam);
+
   const { login } = useAuth();
-  const { showLoading } = useGuestOnly();
+  const { showLoading } = useGuestOnly(redirectAfterAuth);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const heading =
+    redirectParam === BILLING_REDIRECT
+      ? "Sign in to subscribe to Pro"
+      : "Welcome back";
+  const subheading =
+    redirectParam === BILLING_REDIRECT
+      ? "After sign-in you will go to billing to complete Stripe checkout."
+      : "Sign in to your DevFolio account";
 
   if (showLoading) {
     return <AuthLoadingSpinner />;
@@ -31,7 +45,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const me = await login(email, password);
-      router.push(me.role === "admin" ? "/dashboard/admin" : "/dashboard");
+      router.push(resolvePostAuthPath(me.role, redirectParam));
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : "Login failed");
     } finally {
@@ -43,8 +57,8 @@ export default function LoginPage() {
     <div className="mx-auto flex max-w-md flex-col px-4 py-16">
       <Card className="border-[var(--color-cyan-100)] bg-white shadow-xl">
         <CardHeader>
-          <CardTitle className="text-[var(--color-navy-900)]">Welcome back</CardTitle>
-          <p className="text-sm text-[var(--color-text-secondary)]">Sign in to your DevFolio account</p>
+          <CardTitle className="text-[var(--color-navy-900)]">{heading}</CardTitle>
+          <p className="text-sm text-[var(--color-text-secondary)]">{subheading}</p>
         </CardHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -83,14 +97,22 @@ export default function LoginPage() {
           <span className="text-xs text-zinc-500">or</span>
           <div className="h-px flex-1 bg-zinc-200" />
         </div>
-        <GoogleSignInButton onError={setError} />
+        <GoogleSignInButton onError={setError} redirectParam={redirectParam} />
         <p className="mt-6 text-center text-sm text-zinc-500">
           No account?{" "}
-          <Link href="/register" className="text-violet-400 hover:underline">
+          <Link href={registerHref(redirectParam ?? undefined)} className="text-violet-400 hover:underline">
             Register
           </Link>
         </p>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<AuthLoadingSpinner />}>
+      <LoginForm />
+    </Suspense>
   );
 }
