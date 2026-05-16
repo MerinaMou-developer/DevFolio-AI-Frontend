@@ -24,6 +24,7 @@ interface AuthContextValue {
   googleLogin: (idToken: string) => Promise<void>;
   logout: () => void;
   getToken: () => Promise<string | null>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -118,6 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [tokens, applyTokens, logout]);
 
+  const refreshUser = useCallback(async () => {
+    const token = await getToken();
+    if (!token) return;
+    const me = await getMe(token);
+    setUser(me);
+  }, [getToken]);
+
   const value = useMemo(
     () => ({
       user,
@@ -129,8 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       googleLogin,
       logout,
       getToken,
+      refreshUser,
     }),
-    [user, tokens, isLoading, login, register, googleLogin, logout, getToken],
+    [user, tokens, isLoading, login, register, googleLogin, logout, getToken, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

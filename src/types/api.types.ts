@@ -19,5 +19,6 @@ export interface User {
   id: string;
   email: string;
   role: string;
+  plan: string;
   is_active: boolean;
 }

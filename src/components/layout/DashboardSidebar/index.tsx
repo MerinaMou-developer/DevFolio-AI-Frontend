@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Briefcase,
   ChevronLeft,
+  CreditCard,
   Home,
   Layers,
   LogOut,
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/dashboard/profile", label: "Profile", icon: User },
   { href: "/dashboard/tracker", label: "Job tracker", icon: Briefcase },
   { href: "/dashboard/ai", label: "AI Studio", icon: Sparkles },
+  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
 ];
 
 export function DashboardSidebar() {

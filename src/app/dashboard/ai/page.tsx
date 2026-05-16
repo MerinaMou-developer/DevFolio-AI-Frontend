@@ -49,7 +49,12 @@ export default function AiStudioPage() {
       setSelected(result);
       setAnalyses((prev) => [result, ...prev]);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Analysis failed");
+      const msg = err instanceof ApiClientError ? err.message : "Analysis failed";
+      setError(
+        err instanceof ApiClientError && err.status === 429
+          ? `${msg} Upgrade on the Billing page for a higher daily limit.`
+          : msg,
+      );
     } finally {
       setLoading(null);
     }
@@ -68,7 +73,12 @@ export default function AiStudioPage() {
       setSelected(result);
       setAnalyses((prev) => [result, ...prev]);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Match failed");
+      const msg = err instanceof ApiClientError ? err.message : "Match failed";
+      setError(
+        err instanceof ApiClientError && err.status === 429
+          ? `${msg} Upgrade on the Billing page for a higher daily limit.`
+          : msg,
+      );
     } finally {
       setLoading(null);
     }
