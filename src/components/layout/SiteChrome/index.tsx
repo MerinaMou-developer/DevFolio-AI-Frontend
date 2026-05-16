@@ -6,7 +6,14 @@ import { Footer } from "@/components/layout/Footer";
 import { MarketingHeader } from "@/components/features/marketing/MarketingHeader";
 import { MarketingFooter } from "@/components/features/marketing/MarketingFooter";
 
-const MARKETING_PATHS = ["/", "/about", "/login", "/register"];
+const MARKETING_PATHS = [
+  "/",
+  "/about",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+];
 
 function isMarketingPath(pathname: string) {
   if (pathname.startsWith("/dashboard")) return false;

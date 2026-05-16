@@ -2,6 +2,7 @@
 
 import Script from "next/script";
 import { useCallback, useEffect, useState } from "react";
+import { useMounted } from "@/hooks/useMounted";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
 import { GOOGLE_CLIENT_ID } from "@/lib/constants/config";
@@ -27,6 +28,7 @@ interface GoogleSignInButtonProps {
 
 export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
   const { googleLogin } = useAuth();
+  const mounted = useMounted();
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const buttonRef = useCallback((node: HTMLDivElement | null) => {
@@ -77,12 +79,13 @@ export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
         onLoad={() => setReady(true)}
       />
       <div className="flex flex-col items-center gap-3">
-        <div ref={buttonRef} className={loading ? "opacity-50 pointer-events-none" : ""} />
-        {!ready ? (
+        {mounted ? (
+          <div ref={buttonRef} className={loading ? "pointer-events-none opacity-50" : ""} />
+        ) : (
           <Button variant="secondary" disabled className="w-full max-w-xs">
             Loading Google…
           </Button>
-        ) : null}
+        )}
       </div>
     </>
   );
