@@ -138,17 +138,17 @@ function BillingContent() {
       />
 
       {notice ? (
-        <p className="mb-4 rounded-xl border border-[var(--color-mint)]/40 bg-[var(--color-mint)]/10 px-4 py-3 text-sm text-[var(--color-navy-900)]">
+        <p className="mb-4 rounded-xl border border-[var(--color-mint)]/50 bg-[var(--color-mint)]/15 px-4 py-3 text-sm text-[var(--color-mint-bright)]">
           {notice}
         </p>
       ) : null}
       {error ? (
-        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p className="mb-4 rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200">
           {error}
         </p>
       ) : null}
 
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--color-cyan-100)] bg-white px-4 py-3 text-sm shadow-sm">
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--color-cyan-100)] bg-white px-4 py-3 text-sm text-[var(--color-navy-900)] shadow-sm">
         <CreditCard className="h-5 w-5 text-[var(--color-brand)]" />
         <span>
           Current plan:{" "}
@@ -239,7 +239,7 @@ function BillingContent() {
         </Card>
       </div>
 
-      <p className="mt-8 text-center text-xs text-[var(--color-text-secondary)]">
+      <p className="mt-8 text-center text-xs text-[var(--color-muted)]">
         After subscribing, webhooks activate Pro on your account.{" "}
         <Link href="/dashboard/ai" className="text-[var(--color-brand)] underline">
           AI Studio
