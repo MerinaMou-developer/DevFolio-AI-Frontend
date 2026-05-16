@@ -8,10 +8,12 @@ import {
   Home,
   Layers,
   LogOut,
+  Shield,
   Sparkles,
   User,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useMounted } from "@/hooks/useMounted";
 import { cn } from "@/lib/helpers/cn";
 
 const navItems = [
@@ -24,8 +26,14 @@ const navItems = [
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const mounted = useMounted();
 
-  const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : "DF";
+  const showAdmin = mounted && user?.role === "admin";
+  const initials =
+    mounted && user?.email ? user.email.slice(0, 2).toUpperCase() : "DF";
+  const displayName =
+    mounted && user?.email ? user.email.split("@")[0] : "Developer";
+  const displayEmail = mounted ? (user?.email ?? "") : "";
 
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-[var(--color-navy-800)] bg-[var(--color-navy-900)]">
@@ -44,6 +52,20 @@ export function DashboardSidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
+        {showAdmin ? (
+          <Link
+            href="/dashboard/admin"
+            className={cn(
+              "mb-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+              pathname === "/dashboard/admin" || pathname.startsWith("/dashboard/admin/")
+                ? "bg-amber-500/20 text-amber-100 ring-1 ring-amber-500/40"
+                : "text-amber-200/80 hover:bg-amber-500/10 hover:text-amber-100",
+            )}
+          >
+            <Shield className="h-5 w-5 shrink-0" />
+            Admin console
+          </Link>
+        ) : null}
         {navItems.map((item) => {
           const active = item.exact
             ? pathname === item.href
@@ -88,10 +110,8 @@ export function DashboardSidebar() {
               {initials}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-white">
-                {user?.email?.split("@")[0] ?? "Developer"}
-              </p>
-              <p className="truncate text-xs text-[var(--color-muted)]">{user?.email}</p>
+              <p className="truncate text-sm font-medium text-white">{displayName}</p>
+              <p className="truncate text-xs text-[var(--color-muted)]">{displayEmail}</p>
             </div>
           </div>
           <button
