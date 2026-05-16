@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   Briefcase,
+  CreditCard,
   Shield,
   Sparkles,
   UserCircle,
@@ -25,7 +26,9 @@ import {
   updateAdminUser,
 } from "@/lib/api/admin";
 import { getStatusLabel, STATUS_LABELS } from "@/lib/constants/config";
+import { cn } from "@/lib/helpers/cn";
 import { formatDate, formatDateTime } from "@/lib/helpers/formatDate";
+import { formatPlanPayment, formatRevenueTotal } from "@/lib/helpers/formatMoney";
 import type {
   AdminAnalysis,
   AdminApplication,
@@ -51,6 +54,7 @@ export default function AdminDashboardPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [page, setPage] = useState(1);
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [proSubscribers, setProSubscribers] = useState<AdminUser[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [applications, setApplications] = useState<AdminApplication[]>([]);
   const [profiles, setProfiles] = useState<AdminProfile[]>([]);
@@ -59,6 +63,8 @@ export default function AdminDashboardPage() {
   const [appliedQuery, setAppliedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [appliedStatus, setAppliedStatus] = useState("");
+  const [planFilter, setPlanFilter] = useState("");
+  const [appliedPlan, setAppliedPlan] = useState("");
   const [total, setTotal] = useState(0);
   const [overviewLoading, setOverviewLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
@@ -70,7 +76,12 @@ export default function AdminDashboardPage() {
     setOverviewLoading(true);
     setActionError("");
     try {
-      setStats(await getAdminStats(token));
+      const [statsData, proData] = await Promise.all([
+        getAdminStats(token),
+        listAdminUsers(token, { plan: "pro", page: 1, page_size: 50 }),
+      ]);
+      setStats(statsData);
+      setProSubscribers(proData.items);
     } catch (err) {
       setActionError(err instanceof ApiClientError ? err.message : "Failed to load stats");
     } finally {
@@ -91,7 +102,10 @@ export default function AdminDashboardPage() {
           q: appliedQuery || undefined,
         };
         if (tab === "users") {
-          const data = await listAdminUsers(token, params);
+          const data = await listAdminUsers(token, {
+            ...params,
+            plan: appliedPlan || undefined,
+          });
           setUsers(data.items);
           setTotal(data.total);
         } else if (tab === "applications") {
@@ -116,7 +130,7 @@ export default function AdminDashboardPage() {
         setTableLoading(false);
       }
     },
-    [getToken, tab, appliedQuery, appliedStatus],
+    [getToken, tab, appliedQuery, appliedStatus, appliedPlan],
   );
 
   useEffect(() => {
@@ -125,12 +139,13 @@ export default function AdminDashboardPage() {
     } else {
       loadTable(page);
     }
-  }, [tab, page, appliedQuery, appliedStatus, loadOverview, loadTable]);
+  }, [tab, page, appliedQuery, appliedStatus, appliedPlan, loadOverview, loadTable]);
 
   function applyFilters() {
     setPage(1);
     setAppliedQuery(searchInput.trim());
     setAppliedStatus(statusFilter);
+    setAppliedPlan(planFilter);
   }
 
   function switchTab(next: Tab) {
@@ -140,6 +155,8 @@ export default function AdminDashboardPage() {
     setAppliedQuery("");
     setStatusFilter("");
     setAppliedStatus("");
+    setPlanFilter("");
+    setAppliedPlan("");
     setActionError("");
   }
 
@@ -192,6 +209,17 @@ export default function AdminDashboardPage() {
               }}
             />
           </div>
+          {tab === "users" ? (
+            <select
+              value={planFilter}
+              onChange={(e) => setPlanFilter(e.target.value)}
+              className="rounded-xl border border-[var(--color-navy-800)] bg-[var(--color-navy-950)] px-3 py-2 text-sm text-white"
+            >
+              <option value="">All plans</option>
+              <option value="pro">Pro only</option>
+              <option value="free">Free only</option>
+            </select>
+          ) : null}
           {tab === "applications" ? (
             <select
               value={statusFilter}
@@ -225,6 +253,18 @@ export default function AdminDashboardPage() {
           <StatCard label="Users" value={stats.total_users} hint={`${stats.active_users} active`} icon={Users} />
           <StatCard label="Admins" value={stats.admin_users} icon={Shield} />
           <StatCard
+            label="Pro subscribers"
+            value={stats.pro_users}
+            hint={`${stats.free_users} on Free`}
+            icon={CreditCard}
+          />
+          <StatCard
+            label="Pro MRR (est.)"
+            value={formatRevenueTotal(stats.pro_monthly_total_cents, stats.pro_monthly_currency)}
+            hint="Sum of active Pro plan prices"
+            icon={CreditCard}
+          />
+          <StatCard
             label="Applications"
             value={stats.total_applications}
             hint="All users"
@@ -240,9 +280,44 @@ export default function AdminDashboardPage() {
         </div>
       ) : null}
 
+      {tab === "overview" && !overviewLoading && stats ? (
+        <div className="mt-8">
+          <h2 className="mb-3 text-lg font-semibold text-white">Who paid for Pro</h2>
+          <p className="mb-4 text-sm text-[var(--color-muted)]">
+            Email, subscription price, and when they upgraded. Filter all users under the Users tab.
+          </p>
+          {proSubscribers.length === 0 ? (
+            <p className="rounded-xl border border-[var(--color-navy-800)] bg-[var(--color-card)] p-6 text-sm text-[var(--color-muted)]">
+              No Pro subscribers yet.
+            </p>
+          ) : (
+            <DataTable
+              headers={["Email", "Plan", "Payment", "Pro since", "Stripe"]}
+              rows={proSubscribers.map((u) => [
+                u.email,
+                <PlanBadge key={`pro-plan-${u.id}`} plan={u.plan} />,
+                formatPlanPayment(u.plan_amount_cents, u.plan_currency, u.plan_interval),
+                u.pro_since ? formatDateTime(u.pro_since) : "—",
+                <StripeIds
+                  key={`pro-stripe-${u.id}`}
+                  customerId={u.stripe_customer_id}
+                  subscriptionId={u.stripe_subscription_id}
+                />,
+              ])}
+              empty="No Pro subscribers."
+              loading={false}
+              page={1}
+              pageSize={Math.max(proSubscribers.length, 1)}
+              total={proSubscribers.length}
+              onPageChange={() => {}}
+            />
+          )}
+        </div>
+      ) : null}
+
       {tab === "users" ? (
         <DataTable
-          headers={["Email", "Role", "Status", "Joined", "Actions"]}
+          headers={["Email", "Role", "Plan", "Payment", "Pro since", "Stripe", "Status", "Joined", "Actions"]}
           empty="No users found."
           loading={tableLoading}
           page={page}
@@ -252,6 +327,14 @@ export default function AdminDashboardPage() {
           rows={users.map((u) => [
             u.email,
             u.role,
+            <PlanBadge key={`plan-${u.id}`} plan={u.plan} />,
+            formatPlanPayment(u.plan_amount_cents, u.plan_currency, u.plan_interval),
+            u.pro_since ? formatDate(u.pro_since) : "—",
+            <StripeIds
+              key={`stripe-${u.id}`}
+              customerId={u.stripe_customer_id}
+              subscriptionId={u.stripe_subscription_id}
+            />,
             u.is_active ? (
               <span className="text-emerald-400">Active</span>
             ) : (
@@ -338,6 +421,55 @@ export default function AdminDashboardPage() {
       ) : null}
     </div>
   );
+}
+
+function PlanBadge({ plan }: { plan: string }) {
+  const isPro = plan === "pro";
+  return (
+    <span
+      className={cn(
+        "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold",
+        isPro
+          ? "bg-[var(--color-brand)]/25 text-[var(--color-mint-bright)] ring-1 ring-[var(--color-brand)]/40"
+          : "bg-zinc-500/20 text-zinc-300 ring-1 ring-zinc-500/30",
+      )}
+    >
+      {isPro ? "Pro" : "Free"}
+    </span>
+  );
+}
+
+function StripeIds({
+  customerId,
+  subscriptionId,
+}: {
+  customerId: string | null;
+  subscriptionId: string | null;
+}) {
+  if (!customerId && !subscriptionId) {
+    return <span className="text-[var(--color-muted)]">—</span>;
+  }
+  return (
+    <div className="max-w-[180px] space-y-0.5 font-mono text-[10px] leading-tight text-[var(--color-muted)]">
+      {customerId ? (
+        <p title={customerId}>
+          <span className="text-[var(--color-muted)]/70">cus </span>
+          {truncateId(customerId)}
+        </p>
+      ) : null}
+      {subscriptionId ? (
+        <p title={subscriptionId}>
+          <span className="text-[var(--color-muted)]/70">sub </span>
+          {truncateId(subscriptionId)}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function truncateId(id: string): string {
+  if (id.length <= 18) return id;
+  return `${id.slice(0, 10)}…${id.slice(-6)}`;
 }
 
 function DataTable({

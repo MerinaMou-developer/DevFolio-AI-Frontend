@@ -25,7 +25,7 @@ export function getAdminStats(token: string) {
 
 export function listAdminUsers(
   token: string,
-  params: { page?: number; page_size?: number; q?: string } = {},
+  params: { page?: number; page_size?: number; q?: string; plan?: string } = {},
 ) {
   return apiRequest<AdminUsersPage>(`/admin/users${qs(params)}`, { token });
 }

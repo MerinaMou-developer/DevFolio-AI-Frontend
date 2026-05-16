@@ -4,6 +4,10 @@ export interface AdminStats {
   total_users: number;
   active_users: number;
   admin_users: number;
+  pro_users: number;
+  free_users: number;
+  pro_monthly_total_cents: number;
+  pro_monthly_currency: string | null;
   total_profiles: number;
   public_profiles: number;
   total_applications: number;
@@ -14,6 +18,13 @@ export interface AdminUser {
   id: string;
   email: string;
   role: string;
+  plan: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  plan_amount_cents: number | null;
+  plan_currency: string | null;
+  plan_interval: string | null;
+  pro_since: string | null;
   is_active: boolean;
   created_at: string;
 }
